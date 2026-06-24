@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Manuscript palette — warm parchment surfaces, deep ink accent, gilded highlights */
+    --background: 38 25% 96%;
+    --foreground: 28 30% 10%;
+    --card: 38 22% 97%;
+    --card-foreground: 28 30% 10%;
+    --popover: 38 22% 97%;
+    --popover-foreground: 28 30% 10%;
+    --primary: 26 65% 28%;
+    --primary-foreground: 38 25% 96%;
+    --secondary: 38 18% 90%;
+    --secondary-foreground: 28 30% 20%;
+    --muted: 38 15% 92%;
+    --muted-foreground: 28 12% 46%;
+    --accent: 42 70% 45%;
+    --accent-foreground: 28 30% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 38 25% 96%;
+    --border: 36 14% 84%;
+    --input: 36 14% 84%;
+    --ring: 26 65% 28%;
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 30 22% 13%;
+    --sidebar-foreground: 38 20% 82%;
+    --sidebar-primary: 42 70% 55%;
+    --sidebar-primary-foreground: 30 22% 10%;
+    --sidebar-accent: 30 18% 20%;
+    --sidebar-accent-foreground: 38 20% 88%;
+    --sidebar-border: 30 15% 22%;
+    --sidebar-ring: 42 70% 55%;
+
+    /* Importance color scale */
+    --imp-1: 200 60% 58%;
+    --imp-2: 150 50% 45%;
+    --imp-3: 42 70% 45%;
+    --imp-4: 20 70% 52%;
+    --imp-5: 0 65% 48%;
+  }
+
+  .dark {
+    --background: 28 20% 8%;
+    --foreground: 38 20% 88%;
+    --card: 28 18% 10%;
+    --card-foreground: 38 20% 88%;
+    --popover: 28 18% 10%;
+    --popover-foreground: 38 20% 88%;
+    --primary: 42 70% 55%;
+    --primary-foreground: 28 20% 8%;
+    --secondary: 28 15% 16%;
+    --secondary-foreground: 38 20% 80%;
+    --muted: 28 12% 14%;
+    --muted-foreground: 38 10% 55%;
+    --accent: 42 60% 48%;
+    --accent-foreground: 38 20% 88%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 38 20% 88%;
+    --border: 28 12% 22%;
+    --input: 28 12% 22%;
+    --ring: 42 70% 55%;
+
+    --sidebar-background: 28 22% 7%;
+    --sidebar-foreground: 38 18% 78%;
+    --sidebar-primary: 42 70% 55%;
+    --sidebar-primary-foreground: 28 22% 7%;
+    --sidebar-accent: 28 18% 13%;
+    --sidebar-accent-foreground: 38 18% 84%;
+    --sidebar-border: 28 14% 16%;
+    --sidebar-ring: 42 70% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Lora', Georgia, serif;
+    line-height: 1.25;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+}
+
+/* Importance badge colors */
+.imp-badge-1 { background: hsl(var(--imp-1) / 0.15); color: hsl(var(--imp-1)); border-color: hsl(var(--imp-1) / 0.35); }
+.imp-badge-2 { background: hsl(var(--imp-2) / 0.15); color: hsl(var(--imp-2)); border-color: hsl(var(--imp-2) / 0.35); }
+.imp-badge-3 { background: hsl(var(--imp-3) / 0.15); color: hsl(var(--imp-3)); border-color: hsl(var(--imp-3) / 0.35); }
+.imp-badge-4 { background: hsl(var(--imp-4) / 0.15); color: hsl(var(--imp-4)); border-color: hsl(var(--imp-4) / 0.35); }
+.imp-badge-5 { background: hsl(var(--imp-5) / 0.15); color: hsl(var(--imp-5)); border-color: hsl(var(--imp-5) / 0.35); }
+
+/* Dot indicator for importance */
+.imp-dot-1 { background-color: hsl(var(--imp-1)); }
+.imp-dot-2 { background-color: hsl(var(--imp-2)); }
+.imp-dot-3 { background-color: hsl(var(--imp-3)); }
+.imp-dot-4 { background-color: hsl(var(--imp-4)); }
+.imp-dot-5 { background-color: hsl(var(--imp-5)); }
+
+/* Smooth transitions */
+* { transition-property: background-color, border-color, color, fill, stroke; transition-duration: 150ms; transition-timing-function: ease; }
+button, a, [role="button"] { transition-property: all; transition-duration: 150ms; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+
+/* Form field focus ring */
+.focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1; }
+
+/* Section card */
+.section-card {
+  @apply rounded-xl border bg-card shadow-sm;
+}
+
+/* Editable text effect */
+.editable-field {
+  @apply transition-colors cursor-text hover:bg-muted/50 rounded px-1 -mx-1;
+}
+
+/* Auto-save indicator */
+@keyframes pulse-save {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.saving { animation: pulse-save 1.2s ease-in-out infinite; }
