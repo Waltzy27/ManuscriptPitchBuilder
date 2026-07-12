@@ -1,0 +1,117 @@
+name: Build Manuscript
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # lets you trigger a build manually from GitHub's UI
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: novel-pitch/package-lock.json
+
+      - name: Install dependencies
+        working-directory: novel-pitch
+        run: npm ci
+
+      - name: Build app (frontend + backend bundle)
+        working-directory: novel-pitch
+        run: npm run build
+
+      # ── Linux ──────────────────────────────────────────────────────────────
+      - name: Package Linux AppImage
+        if: matrix.platform == 'linux'
+        working-directory: novel-pitch
+        run: npx electron-builder --linux AppImage --x64 --config.npmRebuild=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Windows ────────────────────────────────────────────────────────────
+      - name: Package Windows installer + portable
+        if: matrix.platform == 'win'
+        working-directory: novel-pitch
+        run: npx electron-builder --win nsis portable --x64 --config.npmRebuild=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── macOS ──────────────────────────────────────────────────────────────
+      - name: Create Mac launcher script
+        if: matrix.platform == 'mac'
+        working-directory: novel-pitch
+        run: |
+          cat > "Install Manuscript.command" << 'SCRIPT'
+          #!/bin/bash
+          # One-time setup: removes macOS quarantine so the app opens directly.
+          # After this, just double-click Manuscript.app — no Terminal needed.
+          APP_DIR="$(cd "$(dirname "$0")"; pwd)"
+          APP="$APP_DIR/Manuscript.app"
+          if [ -e "$APP" ]; then
+            xattr -cr "$APP"
+            echo "Setup complete. Launching Manuscript..."
+            open "$APP"
+          else
+            echo "Error: Manuscript.app not found next to this script."
+            echo "Make sure both files are in the same folder."
+            read -p "Press Enter to close..."
+          fi
+          SCRIPT
+          chmod +x "Install Manuscript.command"
+
+      - name: Package macOS DMG
+        if: matrix.platform == 'mac'
+        working-directory: novel-pitch
+        run: npx electron-builder --mac dmg --x64 --arm64 --config.npmRebuild=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Bundle Mac DMG + launcher into zip
+        if: matrix.platform == 'mac'
+        working-directory: novel-pitch
+        run: |
+          mkdir -p mac-release
+          cp release/*.dmg mac-release/ 2>/dev/null || true
+          cp "Install Manuscript.command" mac-release/
+          cd mac-release && zip -r "../Manuscript-Mac.zip" .
+
+      # ── Upload artifacts ───────────────────────────────────────────────────
+      - name: Upload Linux AppImage
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Manuscript-Linux
+          path: novel-pitch/release/*.AppImage
+
+      - name: Upload Windows installers
+        if: matrix.platform == 'win'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Manuscript-Windows
+          path: novel-pitch/release/*.exe
+
+      - name: Upload macOS build
+        if: matrix.platform == 'mac'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Manuscript-Mac
+          path: novel-pitch/Manuscript-Mac.zip
