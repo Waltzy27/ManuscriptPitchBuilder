@@ -5,6 +5,10 @@
   "description": "Literary Agent Pitch Builder for novelists",
   "author": "Manuscript App",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Waltzy27/ManuscriptPitchBuilder.git"
+  },
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
