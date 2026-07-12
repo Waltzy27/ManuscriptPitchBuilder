@@ -3,11 +3,12 @@ name: Build Manuscript
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # lets you trigger a build manually from GitHub's UI
+  workflow_dispatch:
 
 jobs:
   build:
     strategy:
+      fail-fast: false   # let all 3 platforms run even if one fails
       matrix:
         include:
           - os: ubuntu-latest
@@ -26,13 +27,21 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: novel-pitch/package-lock.json
 
+      # Linux needs fpm + rpm for electron-builder AppImage packaging
+      - name: Install Linux packaging dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ruby ruby-dev rpm
+          sudo gem install fpm --no-document
+
       - name: Install dependencies
         working-directory: novel-pitch
-        run: npm ci
+        run: npm install   # use install instead of ci to be tolerant of lockfile drift
 
       - name: Build app (frontend + backend bundle)
         working-directory: novel-pitch
