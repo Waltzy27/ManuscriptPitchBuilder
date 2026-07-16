@@ -181,6 +181,23 @@ export default function PitchPreviewPage() {
     return lines.join("\n");
   };
 
+  const handlePrint = async () => {
+    // In Electron: use native printToPDF (renders full page, shows Save dialog)
+    const api = (window as any).electronAPI;
+    if (api?.savePDF) {
+      const fileName = `${project?.title || "manuscript"}-pitch.pdf`;
+      const result = await api.savePDF(fileName);
+      if (result.success) {
+        toast({ title: "PDF saved", description: `Saved to ${result.filePath}` });
+      } else if (result.error !== "cancelled") {
+        toast({ title: "PDF export failed", description: result.error, variant: "destructive" });
+      }
+    } else {
+      // Web fallback: standard browser print dialog
+      window.print();
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(buildPitchText());
     toast({ title: "Copied to clipboard", description: "The full pitch text has been copied." });
@@ -216,7 +233,7 @@ export default function PitchPreviewPage() {
         <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload} data-testid="button-download-pitch">
           <DownloadIcon size={13} /> Download
         </Button>
-        <Button size="sm" className="gap-1.5" onClick={() => window.print()} data-testid="button-print-pitch">
+        <Button size="sm" className="gap-1.5" onClick={handlePrint} data-testid="button-print-pitch">
           <PrinterIcon size={13} /> Print
         </Button>
       </PageHeader>
