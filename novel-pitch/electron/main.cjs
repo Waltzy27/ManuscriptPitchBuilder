@@ -1,5 +1,6 @@
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, ipcMain, dialog } = require("electron");
 const path = require("path");
+const fs = require("fs");
 
 let mainWindow = null;
 const PORT = 57321; // fixed internal port unlikely to conflict
@@ -14,7 +15,6 @@ function startExpressServer() {
       process.env.NODE_ENV = "production";
 
       // Load the compiled Express bundle (CJS)
-      // We use createRequire because the Electron main process uses CommonJS
       const serverPath = path.join(__dirname, "..", "dist", "index.cjs");
       require(serverPath);
 
@@ -42,6 +42,7 @@ async function createWindow() {
       contextIsolation: true,
       sandbox: false,
       devTools: false,
+      preload: path.join(__dirname, "preload.cjs"),
     },
     show: false,
     backgroundColor: "#f5f0e8",
@@ -68,6 +69,51 @@ async function createWindow() {
     mainWindow = null;
   });
 }
+
+// ── PDF Export ──────────────────────────────────────────────────────────────
+//
+// The renderer calls window.electronAPI.savePDF(fileName) which sends an IPC
+// message here. We use webContents.printToPDF() which renders the *full* page
+// (not just the visible viewport), then show a native Save dialog and write
+// the file to disk.
+
+ipcMain.handle("save-pdf", async (_event, defaultFileName) => {
+  if (!mainWindow) return { success: false, error: "No window" };
+
+  try {
+    // Show a native Save File dialog so the user picks where to save
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: "Save Pitch as PDF",
+      defaultPath: defaultFileName || "manuscript-pitch.pdf",
+      filters: [{ name: "PDF Documents", extensions: ["pdf"] }],
+    });
+
+    if (canceled || !filePath) return { success: false, error: "cancelled" };
+
+    // printToPDF renders the entire page — all scrollable content, all sections
+    const pdfData = await mainWindow.webContents.printToPDF({
+      printBackground: true,           // include background colours
+      pageSize: "Letter",              // standard US letter; change to "A4" if preferred
+      margins: {
+        top: 0.5,                      // inches
+        bottom: 0.5,
+        left: 0.6,
+        right: 0.6,
+      },
+      // Scale the page so the app's content fits nicely
+      scaleFactor: 90,
+    });
+
+    fs.writeFileSync(filePath, pdfData);
+    return { success: true, filePath };
+
+  } catch (err) {
+    console.error("printToPDF error:", err);
+    return { success: false, error: String(err) };
+  }
+});
+
+// ── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(createWindow);
 
